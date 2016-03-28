@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Porn Feed</title>
+		<style>
+			#content
+			{
+				position: absolute;
+				left: 50%;
+				-webkit-transform: translate(-50%, 0%);
+				transform: translate(-50%, 0%);
+			}
+			.content-box
+			{
+				border-radius: 3px;
+				border-style: solid;
+				border-color: black;
+				width: 600px;
+				
+				padding: 5px;
+				padding-bottom: 0px;
+				margin-bottom: 10px;
+			}
+			.content-title
+			{
+				font-size: 18px;
+				font-weight: bold;
+				width: 100%;
+			}
+			.content-link
+			{
+				font-size: 12px;
+				font-weight: lighter;
+				position: absolute;
+				right: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="content"></div>
+		
+		<script type"text/javascript" src="//assets.gfycat.com/gfycat.js"></script>
+		<script src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+		<script type="text/javascript">
+			var content = document.getElementById("content");
+			var imgurReg = /(http(s|)):\/\/(www\.|i\.|)imgur\.com\/([^\.]+)(\.([^\s]+))?/i;
+			var gfycatReg = /(http(s|)):\/\/gfycat.com\/([^\s]+)/i;
+			
+			waitForImgur();
+			function waitForImgur()
+			{
+				if(imgurEmbed && imgurEmbed.createIframe)
+					init();
+				else
+					setTimeout(waitForImgur, 100);
+			}
+			
+			var ws;
+			function init()
+			{
+				ws = new WebSocket("ws://" + document.domain + ":8096");
+				ws.onmessage = function(msg)
+				{
+					console.log(msg.data);
+					var data = JSON.parse(msg.data);
+					
+					var inner;
+					var updateGfy = false;
+					var updateImgur = false;
+					if(data.text)
+					{
+						inner = "<p>" + data.text + "</p>";
+					}
+					else if(data.url)
+					{
+						var imgurMatch = data.url.match(imgurReg);
+						var gfycatMatch = data.url.match(gfycatReg);
+						
+						if(imgurMatch)
+						{
+							inner = "<blockquote class=\"imgur-embed-pub\" lang=\"en\" data-id=\"" + imgurMatch[4] + "\"></blockquote>";
+							updateImgur = true;
+						}
+						else if(gfycatMatch)
+						{
+							inner = "<div class=\"gfyitem\" data-id=\"" + gfycatMatch[3] + "\" ></div> ";
+							updateGfy = true;
+						}
+						else
+						{
+							inner = "<a href=\"" + data.url + "\">" + data.url + "</a>";
+						}
+					}
+					
+					var src =	"<div class=\"content-box\">" +
+									"<div class=\"content-title\">" + data.title +
+										"<span class=\"content-link\">" +
+											"<a href=\"http://redd.it/" + data.id + "\">" +
+												data.category + "/" + data.id +
+											"</a>"+
+										"</span>" +
+									"</div>" +
+									inner +
+								"</div>";
+									
+					content.innerHTML = src + content.innerHTML;
+					
+					if(updateGfy)
+						gfyCollection.init();
+					if(updateImgur)
+						imgurEmbed.createIframe();
+				};
+			}
+		</script>
+	</body>
+</html>
